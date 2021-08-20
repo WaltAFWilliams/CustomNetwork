@@ -23,7 +23,6 @@ class Neuron(object):
 		return len(self.weights)
 
 class Layer(object):
-	"""docstring for Layer"""
 	def __init__(self, numNeurons):
 		self.neurons = [Neuron(numWeights=3) for n in range(numNeurons)]
 
@@ -57,16 +56,5 @@ class Network(object):
 	def loss(self, output, truth):
 		return (output - truth)**2 # Squared Error
 
-
-def main():
-	x = [1,2,3]
-	y = 5.0
-	n = Network()
-	output = n.forward(x)
-	loss = n.loss(output, y)
-	print(f'Loss: {loss}\nOutput:{output}')
-
-if __name__ == '__main__':
-	main()
 
 	

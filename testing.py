@@ -3,6 +3,7 @@ from building_blocks import *
 
 def main():
 	x = [1,2,3]
+	y = [0,1]
 	y = 5.0
 	n = Network()
 	output = n.forward(x)

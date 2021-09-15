@@ -1,4 +1,4 @@
-"""NEXT STEP: HOW TO PERFORM BACKPROPAGATION"""
+"""NEXT STEP: COMPUTE GRADIENTS"""
 
 import numpy as np
 import random
@@ -10,8 +10,9 @@ class Neuron():
 	def __init__(self, numWeights):
 		self.weights = [random.random() for i in range(numWeights)] # All weights initialized in [0, 1]
 		self.bias = random.random()
-		self.weightGradients = [] # grads from backpropagation
+		self.error = 0.0 # error for backpropagation
 		self.output = 0.0
+		self.weightGradients = []
 		
 	def dotProduct(self, x):
 		# x = [1,2,3]
@@ -59,22 +60,28 @@ class Network():
 			x = l.forward(x)
 		return x
 
-	def computeGradients(self, labels):
+	def computErrors(self, labels):
 		for i in range(len(self.layers)-1, 0, -1): # Need to iterate backwards through network
 			errors = []
 			layer = self.layers[i]
 			if i == len(self.layers)-1: # output layer
 				for j in range(len(layer)):
 					neuron = layer[j]
-					error = (labels[j] - neuron.output) * sigmoidDerivative(neuron.output)  # Calculate error for output layer
+					error = (labels[j] - neuron.output) 
 					neuron.error = error
+					errors.append(error)
+			
 			else:
 				for j in range(len(layer)): # hidden layers
 					error = 0.0
 					neuron = layer[j]
 					for outputNeuron in self.layers[i+1]: # output layer
-						error += outputNeuron.error * sigmoidDerivative(outputNeuron.output) * neuron.output
-						neuron.weightGradients.append(error)	
+						error += outputNeuron.error[0]
+					errors.append(error)
+			
+			for j in range(len(layer)):
+				neuron = layer[j]
+				neuron.delta = errors[j] * sigmoidDerivative(neuron.output)  # Calculate error for output layer
 
 	def __len__(self):
 		return len(self.layers)

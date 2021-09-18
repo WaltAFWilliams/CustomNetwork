@@ -1,4 +1,4 @@
-"""NEXT STEP: KEEP TRACK OF INPUTS FOR EACH NEURON TO CALCULATE GRADIENT"""
+"""Model is trained with stochastic gradient descent"""
 
 import numpy as np
 import random
@@ -13,9 +13,9 @@ class Neuron():
 		self.error = 0.0 # error for backpropagation
 		self.output = 0.0
 		self.delta = 0.0
+		self.inputs = []
 		
 	def dotProduct(self, x):
-		# x = [1,2,3]
 		assert len(x) == len(self.weights) # Make sure we have the same number of weights as input data
 		output = 0
 		for i, weight in enumerate(self.weights):
@@ -30,6 +30,7 @@ class Neuron():
 		self.output = 1 / (1+np.exp(-(output))) # sigmoid function
 		return self.output
 
+
 class Layer():
 	def __init__(self, numNeurons, numWeights):
 		self.neurons = [Neuron(numWeights=numWeights) for n in range(numNeurons)]
@@ -37,8 +38,9 @@ class Layer():
 	def forward(self, x):
 		out = []
 		for n in self.neurons:
-			linear_transform = n.dotProduct(x)
-			activation = n.activate(linear_transform)
+			n.inputs = x
+			linear_transform = n.dotProduct(x) # Matrix multiply
+			activation = n.activate(linear_transform) # sigmoid activation function
 			n.output = activation
 			out.append(activation)
 		return out
@@ -63,6 +65,9 @@ class Network():
 		return x
 
 	def computeErrors(self):
+		"""
+		computes errors for each neuron in our network
+		"""
 		for i in reversed(range(len(self.layers))): # Need to iterate backwards through network
 			errors = []
 			layer = self.layers[i]
@@ -71,7 +76,7 @@ class Network():
 					neuron = layer[j]
 					error = (neuron.output - self.labels[j]) 
 					neuron.error = error 
-					errors.append(2 * error) # Need to multiply by 2 because using sum square error as loss function
+					errors.append(2 * error) # Need to multiply by 2 because using sum squared error as loss function
 			
 			else:
 				for j in range(len(layer)): # hidden layers
@@ -85,13 +90,18 @@ class Network():
 				neuron = layer[x]
 				neuron.delta = errors[x] * sigmoidDerivative(neuron.output) # will need to multiply by hidden layer outputs to update hidden parameters
 
-	def updateWeights(self, lr=0.001):
-		for i in range(len(self)):
-			pass
-		# for l in range(len(self.layers)):
-			# for neuron in l:
-				# for weight in neuron.weights:
-					# weight = weight + lr * neuron.delta * 
+	def updateWeights(self, lr=0.01):
+		"""
+		takes gradients and updates weight values
+		"""
+		self.computeErrors()
+		for i in range(len(self.layers)):
+			layer = self.layers[i]
+			for j in range(len(layer)):
+				neuron = layer[j]
+				for k in range(len(neuron)):
+					neuron.weights[k] =  neuron.weights[k] - lr * neuron.delta * neuron.inputs[k] 
+
 			
 	def __len__(self):
 		return len(self.layers)
@@ -99,10 +109,17 @@ class Network():
 	def __getitem__(self, i):
 		return self.layers[i]
 
-	def loss(self, outputs, gts):
-		out = []
-		for i, num in enumerate(outputs): # Sum Squared Error
-			out.append((num - gts[i])**2) 
-		
-		return out
+	def computeLoss(self, outputs, labels):
+		loss = 0.0
+		for i, output in enumerate(outputs): # Sum Squared Error
+			loss += (output - labels[i])**2
+		return loss
 
+	def train(self, inputs, labels, epochs=10):
+		""" training function"""
+		for i in range(epochs):
+			outputs = self.forward(inputs)
+			print(f'Outputs: {outputs} | Labels: {labels}')
+			loss = self.computeLoss(outputs, labels)
+			self.updateWeights()
+			print(f'Epoch {i+1} | Loss: {loss}')

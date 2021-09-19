@@ -1,6 +1,6 @@
 """Model is trained with stochastic gradient descent"""
 
-import numpy as np
+import math
 import random
 
 def sigmoidDerivative(x):
@@ -27,7 +27,7 @@ class Neuron():
 		return len(self.weights)
 
 	def activate(self, output):
-		self.output = 1 / (1+np.exp(-(output))) # sigmoid function
+		self.output = 1 / (1+math.exp(-(output))) # sigmoid function
 		return self.output
 
 

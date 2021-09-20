@@ -1,11 +1,13 @@
 import numpy as np
-from building_blocks import *
+import pandas as pd
+from building_blocks import CustomNetwork
 
 def main():
-	x = [1,2,3]
-	y = [0,1]
-	n = Network(inputs=x, labels=y)
-	n.train(inputs=x, labels=y, epochs=100)
+	df = pd.read_csv('iris50.csv')
+	inputs = df.drop('Species', axis=1).values.tolist()
+	labels = df['Species'].values.tolist()
+	n = CustomNetwork(inputs=inputs, labels=labels)
+	n.fit(epochs=100)
 
 if __name__ == '__main__':
 	main()

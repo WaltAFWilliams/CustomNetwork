@@ -1,4 +1,4 @@
-"""Model is trained with stochastic gradient descent"""
+"""Test out RelU activation function and binary crossentropy loss function"""
 
 import math
 import random
@@ -9,7 +9,7 @@ def sigmoidDerivative(x):
 class Neuron():
 	def __init__(self, numWeights):
 		self.weights = [random.random() for i in range(numWeights)] # All weights initialized in [0, 1]
-		self.bias = random.random() 
+		self.bias = 0.0  
 		self.error = 0.0 # error for backpropagation
 		self.output = 0.0
 		self.delta = 0.0
@@ -27,7 +27,7 @@ class Neuron():
 		return len(self.weights)
 
 	def activate(self, output):
-		self.output = 1 / (1+math.exp(-(output))) # sigmoid function
+		self.output = 1 / (1+math.exp(-output)) # sigmoid function
 		return self.output
 
 
@@ -57,12 +57,12 @@ class CustomNetwork():
 		self.inputs = inputs
 		self.labels = labels
 		self.fc1 = Layer(numNeurons=len(inputs[0]), numWeights=len(inputs[0]))
-		self.fc2 = Layer(numNeurons=5, numWeights=len(self.fc1))
-		self.outputLayer = Layer(numNeurons=1, numWeights=len(self.fc2))
+		self.fc2 = Layer(numNeurons=10, numWeights=len(self.fc1))
+		self.outputLayer = Layer(numNeurons=2, numWeights=len(self.fc2))
 		self.layers = [self.fc1, self.fc2, self.outputLayer]
 	
 	def forward(self, x):
-		"""forward pass through each model"""
+		"""forward pass through each layer"""
 		for l in self.layers:
 			x = l.forward(x)
 		return x
@@ -77,17 +77,18 @@ class CustomNetwork():
 			if i == len(self.layers)-1: # output layer
 				for j in range(len(layer)):
 					neuron = layer[j]
-					error = neuron.output - self.labels[trainIdx] 
+					error = neuron.output - self.labels[trainIdx][j] 
 					neuron.error = error 
-					errors.append(2 * error) # Need to multiply by 2 because using sum squared error as loss function
+					errors.append(-2 * error) # Need to multiply by -2 because using sum squared error as loss function
 			
 			else:
 				for j in range(len(layer)): # hidden layers
 					error = 0.0
 					neuron = layer[j]
-					for outputNeuron in self.layers[i+1]: # aggregate errors from output layer
-						error += outputNeuron.error
+					for outputNeuron in self.layers[i+1]: # aggregate errors from neurons in next layer
+						error += outputNeuron.delta * outputNeuron.weights[j]  
 					errors.append(error)
+					neuron.error = error
 			
 			for x in range(len(layer)):
 				neuron = layer[x]
@@ -103,8 +104,8 @@ class CustomNetwork():
 			for j in range(len(layer)):
 				neuron = layer[j]
 				for k in range(len(neuron)):
-					neuron.weights[k] =  neuron.weights[k] - lr * neuron.delta * neuron.inputs[k]
-				neuron.bias -= neuron.delta 
+					neuron.weights[k] =  neuron.weights[k] + lr * neuron.delta * neuron.inputs[k]
+				neuron.bias += neuron.delta 
 
 			
 	def __len__(self):
@@ -114,18 +115,22 @@ class CustomNetwork():
 		return self.layers[i]
 
 	def computeLoss(self, output, label):
-		return (output[0] - label)**2 # Squared error
+		"""Computes loss after every training example"""
+		loss = 0.0
+		for i, o in enumerate(output):
+			loss += (label[i] - o)**2 # Sum Squared Error
+		return loss 
 
 	def fit(self, epochs=10):
 		""" training function"""
 		for i in range(epochs):
 			loss = 0.0
-			for j, inp in enumerate(self.inputs):
+			for j, inp in enumerate(self.inputs): 
 				output = self.forward(inp)
 				loss += self.computeLoss(output, self.labels[j])
 				if i%9==0: # print model's outputs every 10th epoch
-					print(f'Output: {output[0]} | Label: {self.labels[j]}')
+					print(f'Output: {output} | Label: {self.labels[j]}')
 					
-				self.updateWeights(j)
+				self.updateWeights(j) # update weights after every training example (Stochastic Gradient Descent)
 			
 			print(f'Epoch {i+1} | Loss: {loss / epochs}')
